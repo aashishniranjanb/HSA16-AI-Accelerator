@@ -1,143 +1,151 @@
-//============================================================
-// PE Baseline — 3-Stage Pipelined Processing Element
-//============================================================
-// Weight-Stationary INT8×INT8 → INT32 MAC unit
-//
-// Pipeline:
-//   Stage 1: Input registers   (act_reg, weight_reg)
-//   Stage 2: Multiplier        (product_reg <= act_reg * weight_reg)
-//   Stage 3: Accumulator       (psum_reg <= psum_in + product_reg)
-//
-// Dataflow:
-//   Activations  → pass right  (act_out = act_reg, 1-cycle delayed)
-//   Weights      → pass down   (weight_out = weight_reg, 1-cycle delayed)
-//   Partial sums → pass down   (psum_out = psum_reg, 3-cycle delayed)
-//
-// Reset: Asynchronous active-low
-// Target: 500 MHz, TSMC 28nm
-//============================================================
+`timescale 1ns/1ps
 
-`include "hsa_params.svh"
+//==============================================================================
+// pe_baseline
+//
+// 3-Stage Pipelined Signed MAC Processing Element
+//
+// Stage 1 : Input Capture
+// Stage 2 : Signed Multiply
+// Stage 3 : Accumulate
+//
+// INT8 × INT8 -> INT16
+// INT16 -> INT32 Sign Extension
+// INT32 Accumulation
+//
+// Target:
+//   - Cadence Genus
+//   - Xcelium
+//   - Synopsys DC
+//
+//==============================================================================
 
 module pe_baseline
 (
-    input  logic                          clk,
-    input  logic                          rst_n,
+    //----------------------------------------------------------------------
+    // Clock / Reset
+    //----------------------------------------------------------------------
+    input  logic               clk,
+    input  logic               rst_n,
 
-    // Control
-    input  logic                          valid_in,
+    //----------------------------------------------------------------------
+    // Input Interface
+    //----------------------------------------------------------------------
+    input  logic               valid_in,
 
-    // Data inputs
-    input  logic signed [DATA_WIDTH-1:0]  act_in,
-    input  logic signed [DATA_WIDTH-1:0]  weight_in,
-    input  logic signed [ACC_WIDTH-1:0]   psum_in,
+    input  logic signed [7:0]  act_in,
+    input  logic signed [7:0]  weight_in,
 
-    // Control output
-    output logic                          valid_out,
+    input  logic signed [31:0] psum_in,
 
-    // Data outputs — pass-through for systolic connectivity
-    output logic signed [DATA_WIDTH-1:0]  act_out,
-    output logic signed [DATA_WIDTH-1:0]  weight_out,
+    //----------------------------------------------------------------------
+    // Output Interface
+    //----------------------------------------------------------------------
+    output logic               valid_out,
 
-    // Accumulated result
-    output logic signed [ACC_WIDTH-1:0]   psum_out
+    output logic signed [7:0]  act_out,
+    output logic signed [7:0]  weight_out,
+
+    output logic signed [31:0] psum_out
 );
 
-    //----------------------------------------------------------
-    // Internal Registers
-    //----------------------------------------------------------
+    //==========================================================================
+    // Stage 1 Registers
+    //==========================================================================
 
-    // Stage 1: Input registers
-    logic signed [DATA_WIDTH-1:0]    act_reg;
-    logic signed [DATA_WIDTH-1:0]    weight_reg;
-
-    // Stage 2: Multiplier output
-    logic signed [PRODUCT_WIDTH-1:0] product_reg;
-
-    // Stage 3: Accumulator output
-    logic signed [ACC_WIDTH-1:0]     psum_reg;
-
-    // Valid pipeline
-    logic valid_s1;
-    logic valid_s2;
-    logic valid_s3;
-
-    // Stage 2 needs delayed psum_in to align with product_reg
-    logic signed [ACC_WIDTH-1:0]     psum_in_s1;
-    logic signed [ACC_WIDTH-1:0]     psum_in_s2;
-
-    //----------------------------------------------------------
-    // Stage 1 — Input Register
-    //----------------------------------------------------------
+    logic               s1_valid;
+    logic signed [7:0]  s1_act;
+    logic signed [7:0]  s1_weight;
+    logic signed [31:0] s1_psum;
 
     always_ff @(posedge clk or negedge rst_n)
     begin
-        if (!rst_n)
+        if(!rst_n)
         begin
-            act_reg    <= '0;
-            weight_reg <= '0;
-            valid_s1   <= 1'b0;
-            psum_in_s1 <= '0;
+            s1_valid  <= 1'b0;
+            s1_act    <= '0;
+            s1_weight <= '0;
+            s1_psum   <= '0;
         end
         else
         begin
-            act_reg    <= act_in;
-            weight_reg <= weight_in;
-            valid_s1   <= valid_in;
-            psum_in_s1 <= psum_in;
+            s1_valid  <= valid_in;
+            s1_act    <= act_in;
+            s1_weight <= weight_in;
+            s1_psum   <= psum_in;
         end
     end
 
-    //----------------------------------------------------------
-    // Stage 2 — Multiplier
-    //----------------------------------------------------------
+    //==========================================================================
+    // Stage 2 Registers
+    //==========================================================================
+
+    logic               s2_valid;
+    logic signed [7:0]  s2_act;
+    logic signed [7:0]  s2_weight;
+
+    logic signed [15:0] s2_prod;
+    logic signed [31:0] s2_psum;
 
     always_ff @(posedge clk or negedge rst_n)
     begin
-        if (!rst_n)
+        if(!rst_n)
         begin
-            product_reg <= '0;
-            valid_s2    <= 1'b0;
-            psum_in_s2  <= '0;
+            s2_valid  <= 1'b0;
+            s2_act    <= '0;
+            s2_weight <= '0;
+            s2_prod   <= '0;
+            s2_psum   <= '0;
         end
         else
         begin
-            product_reg <= act_reg * weight_reg;
-            valid_s2    <= valid_s1;
-            psum_in_s2  <= psum_in_s1;
+            s2_valid  <= s1_valid;
+            s2_act    <= s1_act;
+            s2_weight <= s1_weight;
+
+            // Signed Multiplier
+            s2_prod   <= s1_act * s1_weight;
+
+            s2_psum   <= s1_psum;
         end
     end
 
-    //----------------------------------------------------------
-    // Stage 3 — Accumulator
-    //----------------------------------------------------------
+    //==========================================================================
+    // Explicit Sign Extension
+    //==========================================================================
+
+    logic signed [31:0] s2_prod_ext;
+
+    always_comb
+    begin
+        s2_prod_ext = {{16{s2_prod[15]}}, s2_prod};
+    end
+
+    //==========================================================================
+    // Stage 3 Registers
+    //==========================================================================
 
     always_ff @(posedge clk or negedge rst_n)
     begin
-        if (!rst_n)
+        if(!rst_n)
         begin
-            psum_reg <= '0;
-            valid_s3 <= 1'b0;
+            valid_out  <= 1'b0;
+
+            act_out    <= '0;
+            weight_out <= '0;
+
+            psum_out   <= '0;
         end
         else
         begin
-            psum_reg <= psum_in_s2 + {{(ACC_WIDTH-PRODUCT_WIDTH){product_reg[PRODUCT_WIDTH-1]}}, product_reg};
-            valid_s3 <= valid_s2;
+            valid_out  <= s2_valid;
+
+            act_out    <= s2_act;
+            weight_out <= s2_weight;
+
+            // Final Accumulation
+            psum_out   <= s2_psum + s2_prod_ext;
         end
     end
-
-    //----------------------------------------------------------
-    // Output Assignments
-    //----------------------------------------------------------
-
-    // Systolic pass-through (1-cycle delayed)
-    assign act_out    = act_reg;
-    assign weight_out = weight_reg;
-
-    // Accumulated result (3-cycle delayed)
-    assign psum_out   = psum_reg;
-
-    // Valid output
-    assign valid_out  = valid_s3;
 
 endmodule
