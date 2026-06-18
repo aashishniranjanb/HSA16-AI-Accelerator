@@ -1,0 +1,17 @@
+Metric,Value
+PE Count,256
+Array Dimensions,16x16
+Frequency,500 MHz
+Clock Period,2 ns
+WNS (Worst Negative Slack),62.9 ps
+TNS (Total Negative Slack),0
+Cell Count,117225
+Sequential Cells,43496
+Combinational Cells,73729
+Total Power,0.500374 W
+Power Method,Vectorless
+Technology,TSMC 28nm
+Pipeline Stages,3
+Dataflow,Weight-Stationary
+Data Width,INT8
+Accumulator Width,INT32

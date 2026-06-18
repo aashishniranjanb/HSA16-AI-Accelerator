@@ -1,0 +1,6 @@
+Workload,Sparsity,Source
+Dense,0.00%,Baseline (no sparsity)
+AlexNet,48.83%,Conv layer weight distribution
+VGG16,70.70%,Conv layer weight distribution
+ResNet18,89.06%,Conv layer weight distribution
+MobileNetV2,95.70%,Conv layer weight distribution (depthwise separable)

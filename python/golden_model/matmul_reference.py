@@ -234,13 +234,25 @@ def main():
         A_sp, B_sp = generate_sparse(rng, sparsity)
         create_dataset(name, A_sp, B_sp)
 
+    # ---- Real DNN Workloads ----
+
+    dnn_workloads = {
+        "alexnet": 0.4883,
+        "vgg16": 0.7070,
+        "resnet18": 0.8906,
+        "mobilenetv2": 0.9570,
+    }
+    for name, sparsity in dnn_workloads.items():
+        A_dnn, B_dnn = generate_sparse(rng, sparsity)
+        create_dataset(name, A_dnn, B_dnn)
+
     # ---- Summary ----
 
     print("\n" + "=" * 60)
     print(" All datasets generated successfully.")
     print("=" * 60)
     print(f"\n Output location: {VECTOR_DIR.resolve()}")
-    print(f" Datasets: identity, ones, dense, sparse50, sparse70, sparse90, sparse95")
+    print(f" Datasets: identity, ones, dense, sparse50, sparse70, sparse90, sparse95, alexnet, vgg16, resnet18, mobilenetv2")
     print(f"\n Use in RTL testbench:")
     print(f'   $readmemh("vectors/<dataset>/A_matrix.mem", A_mem);')
     print(f'   $readmemh("vectors/<dataset>/B_matrix.mem", B_mem);')

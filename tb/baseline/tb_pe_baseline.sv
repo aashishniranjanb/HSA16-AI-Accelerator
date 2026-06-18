@@ -151,7 +151,7 @@ module tb_pe_baseline;
             else
             begin
 
-                automatic logic signed [31:0] exp;
+                logic signed [31:0] exp;
 
                 exp = expected_q.pop_front();
 
@@ -338,11 +338,11 @@ module tb_pe_baseline;
         repeat(100)
         begin
 
-            automatic logic signed [7:0]  a;
-            automatic logic signed [7:0]  w;
-            automatic logic signed [31:0] p;
+            logic signed [7:0]  a;
+            logic signed [7:0]  w;
+            logic signed [31:0] p;
 
-            automatic logic signed [31:0] exp;
+            logic signed [31:0] exp;
 
             a = $random;
             w = $random;
