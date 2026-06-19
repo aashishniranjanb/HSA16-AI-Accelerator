@@ -1,0 +1,10 @@
+Metric,Value
+Total Cell Area,0.000
+Frequency,500 MHz
+Worst Negative Slack (WNS),62.9 ps
+Total Negative Slack (TNS),0
+Total Dynamic Power,500.32 mW
+Total Leakage Power,0.0525 mW
+Sequential Cells,43496
+Combinational Cells,73729
+Total Cell Count,117225

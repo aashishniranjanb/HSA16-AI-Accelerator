@@ -1,0 +1,6 @@
+Design,Dense,AlexNet,VGG16,ResNet18,MobileNetV2
+Baseline,500.4 mW,500.4 mW,500.4 mW,500.4 mW,500.4 mW
+PE Gated,499.0 mW,366.5 mW,341.7 mW,326.5 mW,325.4 mW
+Row Gated,498.8 mW,416.0 mW,409.7 mW,405.0 mW,405.0 mW
+Tile Gated,500.4 mW,432.8 mW,419.3 mW,401.3 mW,393.4 mW
+Hierarchical,498.1 mW,240.1 mW,172.5 mW,88.6 mW,58.3 mW
