@@ -1,0 +1,70 @@
+# ============================================================
+# HSA16-AI-Accelerator .gitignore
+# ============================================================
+
+# ---- Simulation artifacts ----
+*.vcd
+*.lxt
+*.lxt2
+*.fst
+*.vvp
+*.out
+*.log
+*.key
+*.dsn
+*.trn
+
+# ---- Compiled simulation ----
+work/
+xcelium.d/
+INCA_libs/
+simv
+simv.daidir/
+csrc/
+ucli.key
+
+# ---- Cadence Genus / Innovus ----
+fv/
+*.genus_invs_des/
+genus_output/
+genus_logs/
+innovus_output/
+*.enc
+*.enc.dat
+*.rpt
+reports/
+
+# ---- Synopsys ----
+*.syn
+*.svf
+alib-52/
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+
+# ---- Numpy binary (keep .mem, ignore .npy) ----
+vectors/**/*.npy
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editor / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Build artifacts ----
+*.o
+*.a
+*.so
+*.dll
