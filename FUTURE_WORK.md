@@ -44,28 +44,32 @@ The sparsity profiler operates in two phases at runtime:
 * **Dynamic Phase (Activation Stream):** Monitors activation sparsity dynamically during the first $N$ cycles of execution.
 * **Hardware Implementation:** Standard counters increment when a zero operand ($8'\text{h00}$) is detected on the activation buses or weight buses. The combined sparsity index is computed to drive the mode controller.
 
-### 1.2 Hysteresis-Based Mode Controller
-To prevent **mode thrashing** (where rapid fluctuations in sparsity cause continuous switching of clock-gating domains, resulting in high dynamic power overhead from charging/discharging clock trees), a controller with hysteresis is implemented.
+### 1.2 Confidence-Aware Adaptive Hierarchical Gating (CA-AHSA) Mode Controller
+To prevent **mode thrashing** (where rapid fluctuations in sparsity cause continuous switching of clock-gating domains, resulting in high dynamic power overhead from charging/discharging clock trees) and to smooth transitions between discrete gating boundaries, the controller incorporates **Confidence-Aware Hybrid Zones**.
+
+Instead of treating threshold boundaries as binary transitions, CA-AHSA defines confidence intervals (grey zones) where the controller operates in a hybrid gating mode that combines adjacent execution domains.
 
 ```text
-       Sparsity (%)
-       100% ┼───────────────────────────────────────
-            │                                 ▲ [Enter Tile Mode (80%)]
-        80% ┼─────────────────────────────────┼─────
-            │                                 │
-        75% ┼───────────────────────────▼ [Exit Tile Mode (75%)]
-            │                           │     
-        50% ┼─────────────────────▲ [Enter Row Mode (50%)]
-            │                     │     │
-        45% ┼───────────────▼ [Exit Row Mode (45%)]
-            │               │     
-          0% ┼──────────────┴─────┴─────┴─────┴─────► Time
+ Dynamic Sparsity (%)
+ 100% ┼─────────────────────────────────────────────────────────── Pure Tile Gating Mode
+      │
+  90% ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+      │  Hybrid Row+Tile Gating Zone (Intermediate Confidence)
+  70% ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+      │  Pure Row Gating Mode
+  60% ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+      │  Hybrid PE+Row Gating Zone (Intermediate Confidence)
+  40% ┼ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+      │
+   0% ┼─────────────────────────────────────────────────────────── Pure PE Gating Mode
 ```
 
-* **PE Mode:** Selected for dense workloads (<30% sparsity).
-* **PE + Row Gating Mode:** Activated when sparsity exceeds 50%. Deactivated only if sparsity falls below 45%.
-* **PE + Row + Tile Gating Mode:** Activated when sparsity exceeds 80%. Deactivated only if sparsity falls below 75%.
-* **Skip Block Mode:** Activated when tile-level sparsity exceeds 98%.
+* **Pure PE Gating (<40% Sparsity):** High confidence that the workload is dense; operates only fine-grained PE-level gating.
+* **Hybrid PE+Row Gating (40% - 60% Sparsity):** Intermediate confidence zone. Activates both row-level signatures and PE-level gating in parallel to prevent sudden clock tree charging spikes.
+* **Pure Row Gating (60% - 70% Sparsity):** High confidence that row-level structure matches sparsity patterns.
+* **Hybrid Row+Tile Gating (70% - 90% Sparsity):** Intermediate confidence zone. Disables entire tiles if possible, but falls back to row-level gating for partial zero tiles.
+* **Pure Tile Gating (>90% Sparsity):** High confidence that the workload is extremely sparse; disables entire $4\times 4$ blocks to maximize power savings.
+* **Skip Block Mode (>98% Sparsity):** Skips block transmission and execution completely.
 
 ### 1.3 Zero-Block Bypass
 If an entire $4 \times 4$ tile is evaluated as all-zeros (100% sparse):
