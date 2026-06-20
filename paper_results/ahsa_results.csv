@@ -1,0 +1,10 @@
+Workload,Zeros (W/A),Effective Sparsity,Selected Mode,Gated PE,Gated Row,Gated Tile,Executed MACs,Dynamic Power
+Dense,1/1,0.39%,PE Gating,16,0,0,4080,499.7 mW
+Sparse50,136/123,50.59%,Row Gating,0,240,0,3856,476.9 mW
+Sparse70,186/175,70.51%,Row Gating,0,1168,0,2928,386.2 mW
+Sparse90,226/229,88.87%,Tile Gating,0,0,3008,1088,169.6 mW
+Sparse95,245/244,95.51%,Tile Gating,0,0,3536,560,111.6 mW
+AlexNet,131/133,51.56%,Row Gating,0,448,0,3648,456.6 mW
+VGG16,183/175,69.92%,Row Gating,0,1168,0,2928,386.2 mW
+ResNet18,234/230,90.62%,Tile Gating,0,0,2912,1184,180.2 mW
+MobileNetV2,248/250,97.27%,Tile Gating,0,0,3856,240,76.4 mW
