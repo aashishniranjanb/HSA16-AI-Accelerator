@@ -8,7 +8,18 @@
 # 1. Parameter and Path Setup
 #-------------------------------------------------------------------------------
 set DESIGN            "systolic16x16_adaptive"
-set WORK_DIR          "flow"
+
+# Automatically detect project root directory based on current working directory
+if {[file exists "flow"]} {
+    set PROJECT_ROOT [pwd]
+} elseif {[file exists "../flow"]} {
+    set PROJECT_ROOT [file normalize "[pwd]/.."]
+} else {
+    set PROJECT_ROOT [pwd]
+    puts "WARNING: Project root auto-detection failed. Using current directory: ${PROJECT_ROOT}"
+}
+
+set WORK_DIR          "${PROJECT_ROOT}/flow"
 set NETLIST_DIR       "${WORK_DIR}/netlists"
 set REPORT_DIR        "${WORK_DIR}/reports/genus"
 set LOG_DIR           "${WORK_DIR}/logs"
@@ -17,13 +28,13 @@ set SDC_FILE          "${WORK_DIR}/constraints/systolic16x16.sdc"
 # Foundry 45nm typical library path
 set TARGET_CELL_LIB   "/home/Cadence/FOUNDRY/digital/45nm/dig/lib/typical.lib"
 
-# RTL File List (dependencies first)
+# RTL File List (dependencies first, with full paths relative to PROJECT_ROOT)
 set RTL_FILES [list \
-    "rtl/common/hsa_params.svh" \
-    "rtl/adaptive_gating/sparsity_estimator.sv" \
-    "rtl/adaptive_gating/gating_controller.sv" \
-    "rtl/adaptive_gating/pe_adaptive.sv" \
-    "rtl/adaptive_gating/systolic16x16_adaptive.sv" \
+    "${PROJECT_ROOT}/rtl/common/hsa_params.svh" \
+    "${PROJECT_ROOT}/rtl/adaptive_gating/sparsity_estimator.sv" \
+    "${PROJECT_ROOT}/rtl/adaptive_gating/gating_controller.sv" \
+    "${PROJECT_ROOT}/rtl/adaptive_gating/pe_adaptive.sv" \
+    "${PROJECT_ROOT}/rtl/adaptive_gating/systolic16x16_adaptive.sv" \
 ]
 
 # Ensure output directories exist

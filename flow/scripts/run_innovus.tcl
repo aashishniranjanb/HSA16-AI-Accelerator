@@ -8,7 +8,18 @@
 # 1. Parameter and File Path Configuration
 #-------------------------------------------------------------------------------
 set DESIGN            "systolic16x16_adaptive"
-set WORK_DIR          "flow"
+
+# Automatically detect project root directory based on current working directory
+if {[file exists "flow"]} {
+    set PROJECT_ROOT [pwd]
+} elseif {[file exists "../flow"]} {
+    set PROJECT_ROOT [file normalize "[pwd]/.."]
+} else {
+    set PROJECT_ROOT [pwd]
+    puts "WARNING: Project root auto-detection failed. Using current directory: ${PROJECT_ROOT}"
+}
+
+set WORK_DIR          "${PROJECT_ROOT}/flow"
 set NETLIST_FILE      "${WORK_DIR}/netlists/${DESIGN}_synth.v"
 set SDC_FILE          "${WORK_DIR}/netlists/${DESIGN}_synth.sdc"
 set REPORT_DIR        "${WORK_DIR}/reports/innovus"
