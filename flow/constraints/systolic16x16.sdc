@@ -18,7 +18,11 @@ set_output_delay -clock clk -max 0.400 [all_outputs]
 set_output_delay -clock clk -min 0.080 [all_outputs]
 
 # Set Max Fanout Constraint
-set_max_fanout 20 [current_design]
+set_max_fanout 16 [current_design]
+
+# Set Max Transition and Capacitance Constraints for routing/buffering quality
+set_max_transition 0.10 [current_design]
+set_max_capacitance 0.05 [current_design]
 
 # Set Output Load (typical standard load pin capacitance)
 set_load 0.010 [all_outputs]

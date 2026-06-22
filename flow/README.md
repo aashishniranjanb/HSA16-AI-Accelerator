@@ -29,14 +29,27 @@ flow/
 │   └── innovus/        # Congestion, CTS trees, verify reports, dynamic power reports
 ├── netlists/           # Mapped Verilog, SDF, and SDC from Genus
 ├── saif/               # Dynamic activity SAIF files from simulation
+├── run_frequency_sweep.sh # Sweep automation script
 └── logs/               # Run logs
 ```
 
 ---
 
+## Benchmark Workload Suites
+To validate the design, we evaluate the systolic array against a progression of representative AI workloads:
+1. **Dense (0%):** Absolute worst-case workload.
+2. **Sparse 50% / 70% / 90% / 95%:** Uniformly-distributed synthetic sparsity sweeps.
+3. **AlexNet:** Early CNN benchmark demonstrating coarse/moderate patterns.
+4. **VGG16:** Dense convolutional layers with localized zero clusters.
+5. **ResNet18:** Residual blocks featuring high activation sparsity.
+6. **MobileNetV2:** Lightweight mobile-optimized depthwise separable convolutions.
+7. **EfficientNet-B0:** Modern, highly optimized efficient CNN architecture targeting edge AI.
+
+---
+
 ## Execution Flow (Per Architecture)
 
-For **each** of the six architectures, perform the following eight stages in order:
+For **each** of the six architectures, perform the following stages:
 
 ### Stage 1 & 2: RTL Simulation & Verification
 Compile and run the corresponding testbench to verify bit-exact functional correctness.
@@ -66,8 +79,6 @@ Compile and run the corresponding testbench to verify bit-exact functional corre
   xrun -64bit -sv -timescale 1ns/1ps -access +rwc -incdir rtl/common rtl/adaptive_gating/sparsity_estimator.sv rtl/adaptive_gating/gating_controller.sv rtl/adaptive_gating/pe_adaptive.sv rtl/adaptive_gating/systolic16x16_adaptive.sv tb/adaptive_gating/tb_b16_adaptive.sv
   ```
 
----
-
 ### Stage 3 & 4: VCD Dump and SAIF Generation
 To generate dynamic activity data for back-annotation:
 
@@ -84,22 +95,13 @@ To generate dynamic activity data for back-annotation:
    vcd2saif -input flow/logs/<architecture>.vcd -output flow/saif/<architecture>.saif
    ```
 
----
-
 ### Stage 5: Cadence Genus Synthesis
-Synthesize the RTL design, map it to the 45nm library, check design rules, analyze inferred clock gating, and back-annotate the SAIF file for measured dynamic power estimation.
+Synthesize the RTL design, map it to the 45nm library, check design rules, analyze clock gating, and back-annotate the SAIF file.
 
 Run Genus from the project root:
 ```bash
 genus -files flow/genus/<architecture>.tcl -log flow/logs/genus_<architecture>.log
 ```
-*Outputs generated:*
-- **Netlist:** `flow/netlists/<architecture>_synth.v`
-- **Timing Constraint:** `flow/netlists/<architecture>_synth.sdc`
-- **SDF Delays:** `flow/netlists/<architecture>_synth.sdf`
-- **Reports:** `flow/reports/genus/<architecture>_area.rpt`, `_timing.rpt`, `_power.rpt`, `_qor.rpt`, `_gates.rpt`, `_clock_gating.rpt`, `_design_rules.rpt`
-
----
 
 ### Stage 6 & 7: Cadence Innovus Place & Route (PnR)
 Import the synthesized netlist and timing constraint, create the floorplan, build power rings, place standard cells, run Clock Tree Synthesis (CTS), perform routing, and execute timing verification.
@@ -108,17 +110,25 @@ Run Innovus from the project root:
 ```bash
 innovus -files flow/innovus/<architecture>.tcl -log flow/logs/innovus_<architecture>.log
 ```
-*Outputs generated:*
-- **Database:** `flow/innovus_db/<architecture>_final.enc`
-- **Reports:** `flow/reports/innovus/<architecture>_congestion.rpt`, `_clock_trees.rpt`, `_geom.rpt`, `_conn.rpt`, and timing folders under `flow/reports/innovus/timing_reports_<architecture>/`.
+
+### Stage 8: Post-Route Timing and SAIF-Based Power Analysis
+Innovus automatically checks for SAIF files in `flow/saif/<architecture>.saif` to perform **dynamic post-route power analysis** and outputs it to `flow/reports/innovus/<architecture>_power.rpt`.
 
 ---
 
-### Stage 8: Post-Route Timing and SAIF-Based Power Analysis
-During PnR execution, the Innovus script automatically checks for SAIF files in `flow/saif/<architecture>.saif` to perform **dynamic post-route power analysis**.
+## Frequency Sweep Automation
 
-If the SAIF file is available:
-- **Measured Dynamic Power** is output to: `flow/reports/innovus/<architecture>_power.rpt`
+To evaluate frequency-power scaling and identify the **Maximum Achievable Clock Frequency ($F_{max}$)** without manual configuration:
+
+1. Give the automation script execution permissions:
+   ```bash
+   chmod +x flow/run_frequency_sweep.sh
+   ```
+2. Run the script from the project root:
+   ```bash
+   ./flow/run_frequency_sweep.sh
+   ```
+This script exports the `CLK_PERIOD` environment variable dynamically to scale constraints in both Genus and Innovus. Mapped netlists and reports will be saved with period suffixes (e.g. `baseline_synth_1.8ns.v`, `baseline_power_1.8ns.rpt`).
 
 ---
 
@@ -126,31 +136,47 @@ If the SAIF file is available:
 
 After running the full flow, extract metrics from the report files to fill out these tables for your paper.
 
-### Table I: Synthesis and Physical Implementation Comparison
-Extract area from `<architecture>_area.rpt`, timing (WNS/TNS) from `<architecture>_timing.rpt` or the timing directory, and power from `<architecture>_power.rpt`.
+### Table I: Synthesis and Physical Implementation Comparison (Target: 500 MHz / 2.0 ns)
+Extract area from `<architecture>_area.rpt`, timing (WNS/TNS) from the timing directory, and power from `<architecture>_power.rpt`.
 
 | Architecture | Cell Count | Core Area ($\mu m^2$) | WNS ($ps$) | TNS ($ps$) | Clock Gating Cells | Dynamic Power ($mW$) | Leakage Power ($mW$) | Total Power ($mW$) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Baseline** | | | | | 0 (None) | | | |
+| **Baseline** | | | | | | | | |
 | **PE Gated** | | | | | | | | |
 | **Row Gated** | | | | | | | | |
 | **Tile Gated** | | | | | | | | |
 | **Hierarchical** | | | | | | | | |
 | **AHSA** | | | | | | | | |
 
-* **Area Overhead Verification:** Compare the core area of **AHSA** against **Baseline** to quantify the hardware penalty of the sparsity estimators, FSMs, and controllers.
-* **Clock Gating Efficiency:** Read `<architecture>_clock_gating.rpt` to verify the percentage of gated registers and clock-gating cells inferred by Genus.
+* **Area Overhead Check:**
+  $$\text{AHSA Area Overhead} = \frac{\text{AHSA Area} - \text{Baseline Area}}{\text{Baseline Area}} \times 100\%$$
+* **Clock Gating Efficiency:** Check `<architecture>_clock_gating.rpt` to verify register coverage.
 
 ---
 
-### Table II: Workload Sparsity Evaluation Matrix (Measured Dynamic Power)
-To demonstrate the adaptivity of the controller, run the dynamic simulations across all 9 workloads, generate their respective SAIFs, and synthesize/PnR to report the dynamic power consumption ($mW$):
+### Table II: Workload Sparsity Evaluation Matrix (Measured Dynamic Power @ 500 MHz)
+Dynamic power consumption ($mW$) extracted from post-route reports with SAIF back-annotation:
 
-| Architecture | Dense (0%) | Sparse 50% | Sparse 70% | Sparse 90% | Sparse 95% | AlexNet | VGG16 | ResNet18 | MobileNetV2 |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Baseline** | | | | | | | | | |
-| **PE Gated** | | | | | | | | | |
-| **Row Gated** | | | | | | | | | |
-| **Tile Gated** | | | | | | | | | |
-| **Hierarchical** | | | | | | | | | |
-| **AHSA (Adaptive)** | | | | | | | | | |
+| Architecture | Dense (0%) | Sparse 50% | Sparse 70% | Sparse 90% | Sparse 95% | AlexNet | VGG16 | ResNet18 | MobileNetV2 | EfficientNet-B0 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Baseline** | | | | | | | | | | |
+| **PE Gated** | | | | | | | | | | |
+| **Row Gated** | | | | | | | | | | |
+| **Tile Gated** | | | | | | | | | | |
+| **Hierarchical** | | | | | | | | | | |
+| **AHSA (Adaptive)** | | | | | | | | | | |
+
+---
+
+### Table III: Frequency-Power Scaling (Baseline vs. AHSA)
+Report dynamic post-route power scaling ($mW$) and timing slack across target frequencies.
+
+| Clock Period | Target Frequency | Baseline Power | AHSA Power | Baseline WNS ($ps$) | AHSA WNS ($ps$) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **3.0 ns** | 333 MHz | | | | |
+| **2.5 ns** | 400 MHz | | | | |
+| **2.0 ns** | 500 MHz | | | | |
+| **1.8 ns** | 555 MHz | | | | |
+| **1.6 ns** | 625 MHz | | | | |
+
+* **Identifying $F_{max}$:** Run smaller period decrements (e.g. `1.7ns`, `1.5ns`) to identify the boundary where Worst Negative Slack (WNS) setup transitions below zero. Report the last passing frequency as $F_{max}$.

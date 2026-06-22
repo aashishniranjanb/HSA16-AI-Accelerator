@@ -18,9 +18,20 @@ if {[file exists "flow"]} {
     set PROJECT_ROOT [pwd]
 }
 
+# Determine clock period from environment variable for sweeps (default: 2.0 ns)
+if {[info exists env(CLK_PERIOD)]} {
+    set CLK_PERIOD $env(CLK_PERIOD)
+    set CLK_SUFFIX "_${CLK_PERIOD}ns"
+    puts "INFO: Environment variable CLK_PERIOD detected. Setting target period to: ${CLK_PERIOD} ns..."
+} else {
+    set CLK_PERIOD 2.0
+    set CLK_SUFFIX ""
+    puts "INFO: Using baseline clock period of 2.0 ns (500 MHz)."
+}
+
 set WORK_DIR          "${PROJECT_ROOT}/flow"
-set NETLIST_FILE      "${WORK_DIR}/netlists/${ARCH_NAME}_synth.v"
-set SDC_FILE          "${WORK_DIR}/netlists/${ARCH_NAME}_synth.sdc"
+set NETLIST_FILE      "${WORK_DIR}/netlists/${ARCH_NAME}_synth${CLK_SUFFIX}.v"
+set SDC_FILE          "${WORK_DIR}/netlists/${ARCH_NAME}_synth${CLK_SUFFIX}.sdc"
 set REPORT_DIR        "${WORK_DIR}/reports/innovus"
 set SAIF_FILE         "${WORK_DIR}/saif/${ARCH_NAME}.saif"
 set INSTANCE_PATH     "tb_b16_tile_gated/dut"
@@ -87,7 +98,7 @@ optDesign -preCTS
 
 # Placement Congestion Report
 puts "INFO: Generating placement congestion report..."
-report_congestion -wirelength -outfile ${REPORT_DIR}/${ARCH_NAME}_congestion.rpt
+report_congestion -wirelength -outfile ${REPORT_DIR}/${ARCH_NAME}_congestion${CLK_SUFFIX}.rpt
 
 #-------------------------------------------------------------------------------
 # 6. Clock Tree Synthesis (CTS)
@@ -104,7 +115,7 @@ optDesign -postCTS -hold
 
 # Clock Tree Report
 puts "INFO: Generating clock tree reports..."
-report_ccopt_clock_trees -outfile ${REPORT_DIR}/${ARCH_NAME}_clock_trees.rpt
+report_ccopt_clock_trees -outfile ${REPORT_DIR}/${ARCH_NAME}_clock_trees${CLK_SUFFIX}.rpt
 
 #-------------------------------------------------------------------------------
 # 7. Routing (Detailed Route)
@@ -124,8 +135,8 @@ puts "INFO: Extracting RC parasitic data..."
 extractRC
 
 puts "INFO: Performing physical verification checks..."
-verifyGeometry -report ${REPORT_DIR}/${ARCH_NAME}_geom.rpt
-verifyConnectivity -type all -report ${REPORT_DIR}/${ARCH_NAME}_conn.rpt
+verifyGeometry -report ${REPORT_DIR}/${ARCH_NAME}_geom${CLK_SUFFIX}.rpt
+verifyConnectivity -type all -report ${REPORT_DIR}/${ARCH_NAME}_conn${CLK_SUFFIX}.rpt
 
 #-------------------------------------------------------------------------------
 # 9. Dynamic Power Analysis with SAIF Back-Annotation
@@ -138,21 +149,21 @@ if {[file exists $SAIF_FILE]} {
     puts "WARNING: SAIF file ${SAIF_FILE} not found. Running static power analysis."
     set_power_analysis_mode -method static
 }
-report_power -outfile ${REPORT_DIR}/${ARCH_NAME}_power.rpt
+report_power -outfile ${REPORT_DIR}/${ARCH_NAME}_power${CLK_SUFFIX}.rpt
 
 #-------------------------------------------------------------------------------
 # 10. Generate Final Sign-Off Reports
 #-------------------------------------------------------------------------------
 puts "INFO: Generating final timing and area reports..."
 timeDesign -postRoute -pathReports -drvReports -slackReports \
-           -numPaths 50 -outDir ${REPORT_DIR}/timing_reports_${ARCH_NAME}
+           -numPaths 50 -outDir ${REPORT_DIR}/timing_reports_${ARCH_NAME}${CLK_SUFFIX}
 
 # Report Area to file
-report_area > ${REPORT_DIR}/${ARCH_NAME}_area.rpt
+report_area > ${REPORT_DIR}/${ARCH_NAME}_area${CLK_SUFFIX}.rpt
 
 # Save final database
 puts "INFO: Saving physical layout database..."
-saveDesign ${WORK_DIR}/innovus_db/${ARCH_NAME}_final.enc
+saveDesign ${WORK_DIR}/innovus_db/${ARCH_NAME}_final${CLK_SUFFIX}.enc
 
-puts "SUCCESS: Innovus physical design flow completed for ${ARCH_NAME}."
+puts "SUCCESS: Innovus physical design flow completed for ${ARCH_NAME}${CLK_SUFFIX}."
 exit
