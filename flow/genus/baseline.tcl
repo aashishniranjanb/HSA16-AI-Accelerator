@@ -27,7 +27,8 @@ set SAIF_FILE         "${WORK_DIR}/saif/${ARCH_NAME}.saif"
 set INSTANCE_PATH     "tb_b16/dut"
 
 # Foundry 45nm typical library path
-set TARGET_CELL_LIB   "/home/Cadence/FOUNDRY/digital/45nm/dig/lib/typical.lib"
+set TARGET_CELL_LIB   "typical.lib"
+set LIB_SEARCH_PATH   "/home/Cadence/FOUNDRY/digital/45nm/dig/lib"
 
 # RTL File List
 set RTL_FILES [list \
@@ -40,10 +41,14 @@ set RTL_FILES [list \
 file mkdir $NETLIST_DIR
 file mkdir $REPORT_DIR
 file mkdir $LOG_DIR
+file mkdir "${WORK_DIR}/saif"
 
 #-------------------------------------------------------------------------------
 # 2. Library and Power Configuration
 #-------------------------------------------------------------------------------
+# Set library search path first to help Genus locate typical.lib
+set_db init_lib_search_path $LIB_SEARCH_PATH
+
 set_db library $TARGET_CELL_LIB
 set_db target_library $TARGET_CELL_LIB
 set_db link_library $TARGET_CELL_LIB
@@ -60,10 +65,10 @@ read_hdl -sv $RTL_FILES
 puts "INFO: Elaborating design top: ${DESIGN}..."
 elaborate $DESIGN
 
-# Verification checks after elaboration
+# Verification checks after elaboration using safe Tcl redirect
 puts "INFO: Checking design integrity..."
-check_design -unresolved > ${REPORT_DIR}/${ARCH_NAME}_design_check.rpt
-report_design_rules > ${REPORT_DIR}/${ARCH_NAME}_design_rules.rpt
+redirect ${REPORT_DIR}/${ARCH_NAME}_design_check.rpt { check_design -unresolved }
+redirect ${REPORT_DIR}/${ARCH_NAME}_design_rules.rpt { report_design_rules }
 
 #-------------------------------------------------------------------------------
 # 4. Constraints Annotation
@@ -71,8 +76,8 @@ report_design_rules > ${REPORT_DIR}/${ARCH_NAME}_design_rules.rpt
 puts "INFO: Reading static SDC timing constraints from ${SDC_FILE}..."
 read_sdc $SDC_FILE
 
-# Output timing lint reports to a report file
-report timing -lint > ${REPORT_DIR}/${ARCH_NAME}_timing_lint.rpt
+# Output timing lint reports to a report file using safe check_timing
+redirect ${REPORT_DIR}/${ARCH_NAME}_timing_lint.rpt { check_timing }
 
 #-------------------------------------------------------------------------------
 # 5. Switching Activity Back-Annotation (SAIF)
@@ -94,7 +99,7 @@ puts "INFO: Mapping and optimizing to target foundry cells..."
 synthesize -to_mapped
 
 #-------------------------------------------------------------------------------
-# 7. Write Synthesis Outputs
+# 7. Write Synthesis Outputs (No SDF generated prior to Innovus)
 #-------------------------------------------------------------------------------
 puts "INFO: Writing mapped netlist and gate-level constraints..."
 write_hdl > ${NETLIST_DIR}/${ARCH_NAME}_synth.v
