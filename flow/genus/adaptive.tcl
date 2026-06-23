@@ -23,7 +23,7 @@ set NETLIST_DIR       "${WORK_DIR}/netlists"
 set REPORT_DIR        "${WORK_DIR}/reports/genus"
 set LOG_DIR           "${WORK_DIR}/logs"
 set SDC_FILE          "${WORK_DIR}/constraints/systolic16x16.sdc"
-set SAIF_FILE         "${WORK_DIR}/saif/${ARCH_NAME}.saif"
+set SAIF_FILE         "${WORK_DIR}/xrun/${ARCH_NAME}.saif"
 set INSTANCE_PATH     "tb_b16_adaptive/dut"
 
 # Foundry 45nm typical library path
@@ -43,7 +43,7 @@ set RTL_FILES [list \
 file mkdir $NETLIST_DIR
 file mkdir $REPORT_DIR
 file mkdir $LOG_DIR
-file mkdir "${WORK_DIR}/saif"
+file mkdir "${WORK_DIR}/xrun"
 
 #-------------------------------------------------------------------------------
 # 2. Library and Power Configuration

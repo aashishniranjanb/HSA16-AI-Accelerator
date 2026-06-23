@@ -24,23 +24,27 @@ Not all EDA tools are equally relevant for digital architecture papers. The tabl
 ## 2. Essential Tools (Must-Use)
 
 ### 2.1 Cadence Genus (Synthesis)
+
 * **Purpose:** Compiles SystemVerilog RTL, targets timing constraints, and maps design registers and logic gates to foundry-specific standard cells.
 * **Key Paper Metrics:**
   * **Gate Count / Area:** Core area in square micrometers ($\mu m^2$) and equivalent NAND2 gate counts. Used to prove the area overhead of AHSA's controllers is negligible.
   * **Dynamic & Leakage Power:** Static power calculations.
   * **Clock Gating Coverage:** Inferred gating cells and percentage of gated sequential bits (gated registers).
 * **Usage Command:**
+
   ```bash
   genus -files flow/genus/<architecture>.tcl -log flow/logs/genus_<architecture>.log
   ```
 
 ### 2.2 Cadence Innovus (Physical Place & Route)
+
 * **Purpose:** Positions standard cells on rows, routes the power grid, builds the clock tree (CTS), and routes signal wires.
 * **Key Paper Metrics:**
   * **Congestion Map:** Wire density hot-spots to demonstrate route feasibility.
   * **CTS Quality:** Clock skew, latency, and tree structure sizes (`report_ccopt_clock_trees`).
   * **Post-Route Timing & Power:** Silicon-credible setup/hold slack (WNS/TNS) and dynamic power consumption back-annotated with SAIF dynamic simulation activity.
 * **Usage Command:**
+
   ```bash
   innovus -files flow/innovus/<architecture>.tcl -log flow/logs/innovus_<architecture>.log
   ```
@@ -50,10 +54,12 @@ Not all EDA tools are equally relevant for digital architecture papers. The tabl
 ## 3. Advanced Verification Tools (Recommended Extensions)
 
 ### 3.1 Cadence Tempus (Sign-off Timing Analysis)
+
 * **Why it matters:** Synthesis and PnR tools use simplified, fast timing delay models to accelerate runtime. Tempus performs sign-off timing analysis using high-accuracy cell delay calculations across process, voltage, and temperature (PVT) corners.
 * **Paper Integration:** Allows you to state: *"Timing closure and WNS/TNS slacks were validated under sign-off conditions using Cadence Tempus."* This removes any doubts about timing violations.
 
 ### 3.2 Cadence Voltus (Power Integrity & IR Drop)
+
 * **Why it matters:** Clock-gating and dynamic mode switching create sudden fluctuations in current draw ($dI/dt$). Voltus calculates dynamic IR drop (voltage sag on VDD/VSS rails) to verify that the power rings can support dynamic mode changes without inducing timing failure.
 * **Paper Integration:** Voltus provides dynamic rail sag and electromigration (EM) profiles. This is crucial for verifying that the transition-state noise in CA-AHSA is safe.
 
@@ -62,8 +68,10 @@ Not all EDA tools are equally relevant for digital architecture papers. The tabl
 ## 4. Formal and Equivalence Checks (Optional)
 
 ### 4.1 JasperGold (Formal Verification)
+
 * **Why it matters:** Instead of running millions of random simulation test vectors, JasperGold uses formal mathematical solvers to prove design properties.
 * **Paper Integration:** Proves that the PE, Row, and Tile gating controllers are **100% bit-exact** equivalent to the baseline architecture across all possible inputs.
 
 ### 4.2 Conformal Logic Equivalence Checker (LEC)
+
 * **Why it matters:** Compares two netlists (e.g., RTL vs. Genus Netlist, or Genus Netlist vs. Innovus Netlist) to guarantee that cell optimizations, scan insertion, and clock tree routing did not introduce logical bugs.

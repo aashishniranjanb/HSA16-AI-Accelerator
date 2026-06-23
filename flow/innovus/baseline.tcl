@@ -22,7 +22,7 @@ set WORK_DIR          "${PROJECT_ROOT}/flow"
 set NETLIST_FILE      "${WORK_DIR}/netlists/${ARCH_NAME}_synth.v"
 set SDC_FILE          "${WORK_DIR}/netlists/${ARCH_NAME}_synth.sdc"
 set REPORT_DIR        "${WORK_DIR}/reports/innovus"
-set SAIF_FILE         "${WORK_DIR}/saif/${ARCH_NAME}.saif"
+set SAIF_FILE         "${WORK_DIR}/xrun/${ARCH_NAME}.saif"
 set INSTANCE_PATH     "tb_b16/dut"
 
 # Technology LEF and Standard Cell LEF paths
