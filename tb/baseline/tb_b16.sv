@@ -463,6 +463,7 @@ module tb_b16;
         run_workload("vgg16");
         run_workload("resnet18");
         run_workload("mobilenetv2");
+        run_workload("efficientnet_b0");
 
         reset_dut();
 
@@ -519,7 +520,7 @@ module tb_b16;
     initial
     begin
 
-        $dumpfile("waves/b16.vcd");
+        $dumpfile("flow/xrun/baseline.vcd");
 
         $dumpvars(0, tb_b16);
 

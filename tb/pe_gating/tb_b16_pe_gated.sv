@@ -416,6 +416,10 @@ module tb_b16_pe_gated;
         $display("MobileNetV2: Gated MACs = %6d, Executed MACs = %6d, Sparsity Gated = %5.2f%%", 
                  total_gated_macs, total_executed_macs, 100.0 * total_gated_macs / (total_gated_macs + total_executed_macs));
 
+        run_workload("efficientnet_b0");
+        $display("EfficientNet: Gated MACs = %6d, Executed MACs = %6d, Sparsity Gated = %5.2f%%", 
+                 total_gated_macs, total_executed_macs, 100.0 * total_gated_macs / (total_gated_macs + total_executed_macs));
+
         $display("================================================");
         $display(" TOTAL PASS = %0d", total_pass);
         $display(" TOTAL FAIL = %0d", total_fail);
@@ -432,7 +436,7 @@ module tb_b16_pe_gated;
 
     initial
     begin
-        $dumpfile("waves/pe_gated_b16.vcd");
+        $dumpfile("flow/xrun/pe_gating.vcd");
         $dumpvars(0, tb_b16_pe_gated);
     end
 

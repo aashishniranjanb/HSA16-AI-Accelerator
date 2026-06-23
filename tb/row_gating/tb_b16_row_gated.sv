@@ -405,6 +405,9 @@ module tb_b16_row_gated;
         run_workload("mobilenetv2");
         $display("MobileNetV2: Skipped Row-wavefront Cycles = %6d (Total Row-wavefronts evaluated = %d)", row_skip_counter, 256);
 
+        run_workload("efficientnet_b0");
+        $display("EfficientNet: Skipped Row-wavefront Cycles = %6d (Total Row-wavefronts evaluated = %d)", row_skip_counter, 256);
+
         $display("================================================");
         $display(" TOTAL PASS = %0d", total_pass);
         $display(" TOTAL FAIL = %0d", total_fail);
@@ -421,7 +424,7 @@ module tb_b16_row_gated;
 
     initial
     begin
-        $dumpfile("waves/row_gated_b16.vcd");
+        $dumpfile("flow/xrun/row_gating.vcd");
         $dumpvars(0, tb_b16_row_gated);
     end
 

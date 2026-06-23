@@ -402,6 +402,11 @@ module tb_b16_hierarchical;
         $display("MobileNetV2 | %10d | %9d | %8d | %8d | %10d", 
             total_tile_gated, total_row_gated, total_pe_gated, total_exec, 4096);
 
+        // 10. EfficientNet-B0
+        run_workload("efficientnet_b0");
+        $display("EfficientNet | %10d | %9d | %8d | %8d | %10d", 
+            total_tile_gated, total_row_gated, total_pe_gated, total_exec, 4096);
+
         $display("==================================================================================");
         $display(" TOTAL PASS = %0d", total_pass);
         $display(" TOTAL FAIL = %0d", total_fail);
@@ -417,7 +422,7 @@ module tb_b16_hierarchical;
 
     initial
     begin
-        $dumpfile("waves/hierarchical_gated_b16.vcd");
+        $dumpfile("flow/xrun/hierarchical.vcd");
         $dumpvars(0, tb_b16_hierarchical);
     end
 

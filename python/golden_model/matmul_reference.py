@@ -241,6 +241,7 @@ def main():
         "vgg16": 0.7070,
         "resnet18": 0.8906,
         "mobilenetv2": 0.9570,
+        "efficientnet_b0": 0.9800,
     }
     for name, sparsity in dnn_workloads.items():
         A_dnn, B_dnn = generate_sparse(rng, sparsity)

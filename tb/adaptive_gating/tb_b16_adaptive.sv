@@ -431,6 +431,12 @@ module tb_b16_adaptive;
             get_policy_string(active_policy), total_tile_gated, total_row_gated, total_pe_gated, total_exec, 4096,
             dut.weight_zero_cnt, dut.act_zero_cnt);
 
+        // 10. EfficientNet-B0
+        run_workload("efficientnet_b0");
+        $display("EfficientNet | %13s | %10d | %9d | %8d | %8d | %10d | %d/%d", 
+            get_policy_string(active_policy), total_tile_gated, total_row_gated, total_pe_gated, total_exec, 4096,
+            dut.weight_zero_cnt, dut.act_zero_cnt);
+
         $display("=========================================================================================================");
         $display(" TOTAL PASS = %0d", total_pass);
         $display(" TOTAL FAIL = %0d", total_fail);
@@ -446,7 +452,7 @@ module tb_b16_adaptive;
 
     initial
     begin
-        $dumpfile("waves/adaptive_gated_b16.vcd");
+        $dumpfile("flow/xrun/adaptive.vcd");
         $dumpvars(0, tb_b16_adaptive);
     end
 

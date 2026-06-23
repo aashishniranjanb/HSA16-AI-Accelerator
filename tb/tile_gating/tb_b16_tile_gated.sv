@@ -405,6 +405,9 @@ module tb_b16_tile_gated;
         run_workload("mobilenetv2");
         $display("MobileNetV2: Skipped Tile-wavefront Cycles = %6d (Total Tile-wavefronts evaluated = %d)", tile_skip_counter, 64);
 
+        run_workload("efficientnet_b0");
+        $display("EfficientNet: Skipped Tile-wavefront Cycles = %6d (Total Tile-wavefronts evaluated = %d)", tile_skip_counter, 64);
+
         $display("================================================");
         $display(" TOTAL PASS = %0d", total_pass);
         $display(" TOTAL FAIL = %0d", total_fail);
@@ -421,7 +424,7 @@ module tb_b16_tile_gated;
 
     initial
     begin
-        $dumpfile("waves/tile_gated_b16.vcd");
+        $dumpfile("flow/xrun/tile_gating.vcd");
         $dumpvars(0, tb_b16_tile_gated);
     end
 
