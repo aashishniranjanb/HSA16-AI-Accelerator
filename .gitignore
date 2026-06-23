@@ -68,3 +68,7 @@ desktop.ini
 *.a
 *.so
 *.dll
+
+# ---- Publication Secrets (Do not publish until paper accepted) ----
+docs/NOVELTY_ADDITION.md
+docs/README_RESULTS.md
