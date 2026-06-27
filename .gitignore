@@ -69,6 +69,17 @@ desktop.ini
 *.so
 *.dll
 
+# ---- Cadence runtime artifacts ----
+cadencelog.md
+cadence rtl sa16x16.md
+temp_b16.md
+*.genus_invs_des/
+genus_invs_des/
+.cadence/
+.simvision/
+*.err
+*.history
+
 # ---- Publication Secrets (Do not publish until paper accepted) ----
 docs/NOVELTY_ADDITION.md
 docs/README_RESULTS.md

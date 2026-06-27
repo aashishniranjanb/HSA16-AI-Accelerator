@@ -228,9 +228,26 @@ def main():
 
     results = []
 
+    # Name mapping for clean output
+    NAME_MAPPING = {
+        "dense": "Dense",
+        "sparse50": "Sparse50",
+        "sparse70": "Sparse70",
+        "sparse90": "Sparse90",
+        "sparse95": "Sparse95",
+        "alexnet": "AlexNet",
+        "vgg16": "VGG16",
+        "resnet18": "ResNet18",
+        "mobilenetv2": "MobileNetV2",
+        "efficientnet_b0": "EfficientNet-B0"
+    }
+
     # ---- Process existing vector datasets ----
 
-    existing_datasets = ["dense", "sparse50", "sparse70", "sparse90", "sparse95"]
+    existing_datasets = [
+        "dense", "sparse50", "sparse70", "sparse90", "sparse95",
+        "alexnet", "vgg16", "resnet18", "mobilenetv2", "efficientnet_b0"
+    ]
 
     for dataset_name in existing_datasets:
         dataset_dir = VECTOR_DIR / dataset_name
@@ -238,20 +255,8 @@ def main():
             print(f"\n  Processing: {dataset_name}")
             stats = process_vector_dataset(dataset_name, dataset_dir)
             if stats:
-                results.append((dataset_name.capitalize(), stats))
-
-    # ---- Generate DNN workload analysis ----
-
-    rng = np.random.default_rng(seed=2024)
-
-    for dnn_name, sparsity in DNN_WORKLOADS.items():
-        print(f"\n  Generating DNN workload: {dnn_name} (sparsity={sparsity:.2%})")
-        A, B = generate_dnn_workload(dnn_name, sparsity, rng)
-        stats = analyze_mac_activity(A, B)
-        stats["a_sparsity"] = compute_sparsity(A)
-        stats["b_sparsity"] = compute_sparsity(B)
-        stats["combined_sparsity"] = (stats["a_sparsity"] + stats["b_sparsity"]) / 2.0
-        results.append((dnn_name, stats))
+                display_name = NAME_MAPPING.get(dataset_name, dataset_name.capitalize())
+                results.append((display_name, stats))
 
     # ---- Output ----
 

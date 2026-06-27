@@ -4,3 +4,4 @@ AlexNet,48.83%,Conv layer weight distribution
 VGG16,70.70%,Conv layer weight distribution
 ResNet18,89.06%,Conv layer weight distribution
 MobileNetV2,95.70%,Conv layer weight distribution (depthwise separable)
+EfficientNet-B0,98.44%,Conv layer weight distribution (efficient edge CNN)

@@ -8,3 +8,4 @@ AlexNet,131/133,51.56%,Row Gating,0,448,0,3648,456.6 mW
 VGG16,183/175,69.92%,Row Gating,0,1168,0,2928,386.2 mW
 ResNet18,234/230,90.62%,Tile Gating,0,0,2912,1184,180.2 mW
 MobileNetV2,248/250,97.27%,Tile Gating,0,0,3856,240,76.4 mW
+EfficientNet-B0,251/253,98.44%,Tile Gating,0,0,3920,176,60.5 mW
